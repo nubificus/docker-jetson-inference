@@ -1,0 +1,24 @@
+From 3d7e6399732f47f3659808d2cd93fee8429fdd7e Mon Sep 17 00:00:00 2001
+From: Anastassios Nanos <ananos@nubificus.co.uk>
+Date: Mon, 23 Nov 2020 07:54:36 +0000
+Subject: [PATCH] Enable RTX gpu
+
+---
+ CMakeLists.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 46c997dd..9ba88e7f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -70,6 +70,7 @@ if(CUDA_VERSION_MAJOR GREATER 9)
+ 		CUDA_NVCC_FLAGS
+ 		${CUDA_NVCC_FLAGS}; 
+ 		-gencode arch=compute_72,code=sm_72
++		-gencode arch=compute_75,code=sm_75
+ 	)
+ endif()
+ 
+-- 
+2.17.1
+
