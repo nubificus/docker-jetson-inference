@@ -15,7 +15,7 @@ docker build -t jetson-inference:x86_64 .
 To use the container/framework, use the example binaries & images: 
 
 ```
-docker run --rm --network=host --gpus all  -it test x86_64/bin/imagenet-console x86_64/bin/images/dog_0.jpg
+docker run --rm --network=host --gpus all  -it jetson-inference:x86_64 x86_64/bin/imagenet-console x86_64/bin/images/dog_0.jpg
 ```
 
 Please note you have to setup nvidia-docker beforehand, in order to use the GPU from the container. Further instructions are provided here: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker
