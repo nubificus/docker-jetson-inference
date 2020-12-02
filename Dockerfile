@@ -29,6 +29,38 @@ RUN cd /jetson-inference && \
 	make -j$(nproc) && \
 	make install -j$(nproc) && \
 	cp -a ../utils/image/stb /usr/local/include
+
+# download & copy networks
+RUN mkdir -p /usr/local/networks && cd /jetson-inference/tools && \
+	./download-models.sh NO && \
+        cp -avf /jetson-inference/data/networks/* /usr/local/networks
+
+# cleanup
 RUN rm -rf /jetson-inference 0001-Enable-RTX-gpu.patch
 
+# build vaccelrt
 WORKDIR /
+RUN git clone https://github.com/cloudkernels/vaccelrt
+RUN mkdir -p /vaccelrt/build
+WORKDIR /vaccelrt/build
+RUN cmake -DBUILD_PLUGIN_JETSON=ON ../
+RUN make -j$(nproc) install
+WORKDIR /
+# cleanup
+RUN rm -rf /vaccelrt
+
+# copy bin files (will be replaced from wget release assets)
+COPY /bin/vmlinux /bin/vmlinux
+COPY /bin/rootfs.img.xz /bin/rootfs.img.xz
+COPY /bin/firecracker /bin/firecracker
+
+# copy cached Jit built code for the specific GPU & network
+COPY cache/bvlc_googlenet.caffemodel.1.1.7201.GPU.FP16.engine /bin/
+COPY cache/fcn_resnet18.onnx.1.1.7201.GPU.FP16.engine /bin/
+COPY cache/ssd_mobilenet_v2_coco.uff.1.1.7201.GPU.FP16.engine /bin/
+
+# copy fc config & init script
+COPY config_vaccel.json config_vaccel.json
+COPY entrypoint.sh /entrypoint.sh
+
+CMD ["/entrypoint.sh"]
