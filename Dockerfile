@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 	python3-numpy \
 	sudo \
 	wget \
-	&& rm -rf /var/lib/apt/lists/*
+	&& apt-get clean
 
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub && \
 	wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb && \
@@ -20,34 +20,28 @@ RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/
 COPY /0001-Enable-RTX-gpu.patch /
 RUN git clone --recursive https://github.com/dusty-nv/jetson-inference
 RUN cd /jetson-inference && \
-	git config user.name "Builder" && \
-	git config user.email "builder@nubificus.co.uk" && \
-	git am /0001-Enable-RTX-gpu.patch && \
-	mkdir build && \
-	cd build && \
-	BUILD_DEPS=YES cmake ../ && \
-	make -j$(nproc) && \
-	make install -j$(nproc) && \
-	cp -a ../utils/image/stb /usr/local/include
-
-# download & copy networks
-RUN mkdir -p /usr/local/networks && cd /jetson-inference/tools && \
-	./download-models.sh NO && \
-        cp -avf /jetson-inference/data/networks/* /usr/local/networks
-
-# cleanup
-RUN rm -rf /jetson-inference 0001-Enable-RTX-gpu.patch
+        git config user.name "Builder" && \
+        git config user.email "builder@nubificus.co.uk" && \
+        git am /0001-Enable-RTX-gpu.patch && \
+        mkdir build && \
+        cd build && \
+        BUILD_DEPS=YES cmake ../ && \
+        make -j$(nproc) && \
+        make install -j$(nproc) && \
+        cp -a ../utils/image/stb /usr/local/include && \
+        mkdir -p /usr/local/networks && cd /jetson-inference/tools && \
+        ./download-models.sh NO && \
+        cp -avf /jetson-inference/data/networks/* /usr/local/networks && \
+        rm -rf /jetson-inference 0001-Enable-RTX-gpu.patch && \
+        apt-get clean
 
 # build vaccelrt
 WORKDIR /
 RUN git clone https://github.com/cloudkernels/vaccelrt
-RUN mkdir -p /vaccelrt/build
-WORKDIR /vaccelrt/build
-RUN cmake -DBUILD_PLUGIN_JETSON=ON ../
-RUN make -j$(nproc) install
-WORKDIR /
-# cleanup
-RUN rm -rf /vaccelrt
+RUN mkdir -p /vaccelrt/build && cd /vaccelrt/build && \
+	cmake -DBUILD_PLUGIN_JETSON=ON ../ && \
+	make -j$(nproc) install && \
+	rm -rf /vaccelrt
 
 # copy bin files (will be replaced from wget release assets)
 COPY /bin/vmlinux /bin/vmlinux
