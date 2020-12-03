@@ -13,12 +13,16 @@ RUN apt-get update && apt-get install -y \
 	wget \
 	&& apt-get clean
 
+RUN git clone --recursive https://github.com/nubificus/jetson-inference
 COPY /0001-Enable-RTX-gpu.patch /
-RUN git clone --recursive https://github.com/dusty-nv/jetson-inference
+COPY /0001-Disable-VERBOSE-logging.patch /
+COPY /0001-Disable-Logging.patch /
 RUN cd /jetson-inference && \
-        git config user.name "Builder" && \
-        git config user.email "builder@nubificus.co.uk" && \
+        git config --global user.name "Builder" && \
+        git config --global user.email "builder@nubificus.co.uk" && \
         git am /0001-Enable-RTX-gpu.patch && \
+	git am --keep-cr /0001-Disable-VERBOSE-logging.patch && \
+	cd utils && git am --keep-cr /0001-Disable-Logging.patch && cd .. && \
         mkdir build && \
         cd build && \
         BUILD_DEPS=YES cmake ../ && \
