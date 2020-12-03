@@ -3,15 +3,15 @@
 FC_BIN=/bin/firecracker
 NETWORKS=/usr/local/networks
 KERNEL=./bin/vmlinux
-ROOTFS=./bin/rootfs.img.xz
+ROOTFS=./bin/rootfs.img
 FC_CONFIG=config_vaccel.json
 
-echo "Uncompressing rootfs..."
-xzcat $ROOTFS > rootfs.img
+#echo "Uncompressing rootfs..."
+#xzcat $ROOTFS > rootfs.img
 
 ln -s $NETWORKS ./networks
 ln -s $KERNEL ./vmlinux
-#ln -s $ROOTFS ./rootfs.img
+ln -s $ROOTFS ./rootfs.img
 
 mv bin/bvlc_googlenet.caffemodel.1.1.7201.GPU.FP16.engine networks/
 mv bin/fcn_resnet18.onnx.1.1.7201.GPU.FP16.engine networks/

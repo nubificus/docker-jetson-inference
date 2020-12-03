@@ -13,10 +13,6 @@ RUN apt-get update && apt-get install -y \
 	wget \
 	&& apt-get clean
 
-RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub && \
-	wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb && \
-	apt install ./nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
-
 COPY /0001-Enable-RTX-gpu.patch /
 RUN git clone --recursive https://github.com/dusty-nv/jetson-inference
 RUN cd /jetson-inference && \
@@ -43,12 +39,13 @@ RUN mkdir -p /vaccelrt/build && cd /vaccelrt/build && \
 	make -j$(nproc) install && \
 	rm -rf /vaccelrt
 
-# copy bin files (will be replaced from wget release assets)
-COPY /bin/vmlinux /bin/vmlinux
-COPY /bin/rootfs.img.xz /bin/rootfs.img.xz
-COPY /bin/firecracker /bin/firecracker
+# get latest bin files
+RUN wget https://github.com/nubificus/fc-x86-guest-build/releases/download/v0.1.1/rootfs.img -O /bin/rootfs.img
+RUN wget https://github.com/nubificus/fc-x86-guest-build/releases/download/v0.1.1/vmlinux -O /bin/vmlinux
+RUN wget https://github.com/cloudkernels/firecracker/releases/download/vaccel-v0.23.1/firecracker-vaccel -O /bin/firecracker
+RUN chmod +x /bin/firecracker
 
-# copy cached Jit built code for the specific GPU & network
+# copy cached Jit built code for RTX 2060 specific GPU & network(s)
 COPY cache/bvlc_googlenet.caffemodel.1.1.7201.GPU.FP16.engine /bin/
 COPY cache/fcn_resnet18.onnx.1.1.7201.GPU.FP16.engine /bin/
 COPY cache/ssd_mobilenet_v2_coco.uff.1.1.7201.GPU.FP16.engine /bin/
