@@ -1,6 +1,6 @@
 FROM nvidia/cuda:11.1-cudnn8-devel-ubuntu18.04
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
 	cmake \
 	git \
 	libnvinfer-dev \
@@ -13,10 +13,6 @@ RUN apt-get update && apt-get install -y \
 	wget \
 	&& rm -rf /var/lib/apt/lists/*
 
-RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub && \
-	wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb && \
-	apt install ./nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
-
 COPY /0001-Enable-RTX-gpu.patch /
 RUN git clone --recursive https://github.com/dusty-nv/jetson-inference
 RUN cd /jetson-inference && \
@@ -25,10 +21,16 @@ RUN cd /jetson-inference && \
 	git am /0001-Enable-RTX-gpu.patch && \
 	mkdir build && \
 	cd build && \
-	BUILD_DEPS=YES cmake ../ && \
+	cmake -DBUILD_INTERACTIVE=NO ../ && \
 	make -j$(nproc) && \
 	make install -j$(nproc) && \
-	cp -a ../utils/image/stb /usr/local/include
+	cp -a ../utils/image/stb /usr/local/include && \
+	mkdir /usr/local/share/jetson-inference/tools && \
+	cp ../tools/download-models.sh /usr/local/share/jetson-inference/tools/ && \
+	sed 's/BUILD_INTERACTIVE=.*/BUILD_INTERACTIVE=0/g' \
+		-i /usr/local/share/jetson-inference/tools/download-models.sh && \
+	unlink /usr/local/bin/images && unlink /usr/local/bin/networks
+
 RUN rm -rf /jetson-inference 0001-Enable-RTX-gpu.patch
 
 WORKDIR /
