@@ -27,9 +27,12 @@ RUN cd /jetson-inference && \
 	cp -a ../utils/image/stb /usr/local/include && \
 	mkdir /usr/local/share/jetson-inference/tools && \
 	cp ../tools/download-models.sh /usr/local/share/jetson-inference/tools/ && \
+	mkdir /usr/local/share/jetson-inference/data && \
+	cp -r ../data/networks /usr/local/share/jetson-inference/data/ && \
 	sed 's/BUILD_INTERACTIVE=.*/BUILD_INTERACTIVE=0/g' \
 		-i /usr/local/share/jetson-inference/tools/download-models.sh && \
-	unlink /usr/local/bin/images && unlink /usr/local/bin/networks
+	unlink /usr/local/bin/images && unlink /usr/local/bin/networks && \
+	ln -s /usr/local/share/jetson-inference/data/networks /usr/local/bin/
 
 RUN rm -rf /jetson-inference 0001-Enable-RTX-gpu.patch
 
