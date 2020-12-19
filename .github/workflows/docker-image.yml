@@ -19,4 +19,5 @@ jobs:
         name:  nubificus/jetson-inference
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        tags: latest
+        buildargs: TOKEN=${{ secrets.NBFC_BUILDER_TOKEN }}
+        tags: e2e
