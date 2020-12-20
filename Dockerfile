@@ -13,19 +13,21 @@ RUN apt-get update && apt-get install -y \
 	wget \
 	&& apt-get clean
 
-RUN git clone --recursive https://github.com/nubificus/jetson-inference
-COPY /0001-Enable-RTX-gpu.patch /
-COPY /0001-Disable-VERBOSE-logging.patch /
-COPY /0001-Disable-Logging.patch /
-RUN cd /jetson-inference && \
+RUN git clone --recursive https://github.com/nubificus/jetson-inference 
+COPY /ji.patch /
+RUN cd /jetson-inference && git checkout 0a75e3059 && patch -p1 < /ji.patch
+#COPY /0001-Enable-RTX-gpu.patch /
+#COPY /0001-Disable-VERBOSE-logging.patch /
+#COPY /0001-Disable-Logging.patch /
+ENV TZ=Europe/London
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt-get -y install python3.7
+RUN cd /jetson-inference && git submodule update --init  && \
         git config --global user.name "Builder" && \
         git config --global user.email "builder@nubificus.co.uk" && \
-        git am /0001-Enable-RTX-gpu.patch && \
-	git am --keep-cr /0001-Disable-VERBOSE-logging.patch && \
-	cd utils && git am --keep-cr /0001-Disable-Logging.patch && cd .. && \
         mkdir build && \
         cd build && \
-        BUILD_DEPS=YES cmake ../ && \
+        BUILD_DEPS=YES cmake -DBUILD_INTERACTIVE=NO ../ && \
         make -j$(nproc) && \
         make install -j$(nproc) && \
         cp -a ../utils/image/stb /usr/local/include && \
@@ -37,15 +39,17 @@ RUN cd /jetson-inference && \
 
 # build vaccelrt
 WORKDIR /
-RUN git clone https://github.com/cloudkernels/vaccelrt
+RUN git clone https://github.com/cloudkernels/vaccelrt -b classify_test
 RUN mkdir -p /vaccelrt/build && cd /vaccelrt/build && \
-	cmake -DBUILD_PLUGIN_JETSON=ON ../ && \
+	cmake -DBUILD_PLUGIN_JETSON=ON -DBUILD_EXAMPLES=ON ../ && \
 	make -j$(nproc) install && \
 	rm -rf /vaccelrt
 
-# get latest bin files
-RUN wget https://github.com/nubificus/fc-x86-guest-build/releases/download/v0.1.1/rootfs.img -O /bin/rootfs.img
-RUN wget https://github.com/nubificus/fc-x86-guest-build/releases/download/v0.1.1/vmlinux -O /bin/vmlinux
+RUN apt-get install -y curl
+
+ARG RELEASE=v0.1.3
+RUN wget https://github.com/nubificus/fc-x86-guest-build/releases/download/${RELEASE}/vmlinux -O /bin/vmlinux && \
+    wget https://github.com/nubificus/fc-x86-guest-build/releases/download/${RELEASE}/rootfs.img -O /bin/rootfs.img
 RUN wget https://github.com/cloudkernels/firecracker/releases/download/vaccel-v0.23.1/firecracker-vaccel -O /bin/firecracker
 RUN chmod +x /bin/firecracker
 

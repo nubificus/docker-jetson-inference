@@ -1,0 +1,25 @@
+From 1a877f1d690b9f5f701cd747b3b60c91bd289ea3 Mon Sep 17 00:00:00 2001
+From: Anastassios Nanos <ananos@nubificus.co.uk>
+Date: Thu, 3 Dec 2020 13:07:04 -0600
+Subject: [PATCH] Disable VERBOSE Logging
+
+---
+ c/tensorNet.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/c/tensorNet.cpp b/c/tensorNet.cpp
+index 6510f0a6..446fa766 100644
+--- a/c/tensorNet.cpp
++++ b/c/tensorNet.cpp
+@@ -552,7 +552,7 @@ bool tensorNet::ProfileModel(const std::string& deployFile,			   // name for caf
+ 			return false;
+ 		}
+ 
+-    #if NV_TENSORRT_MAJOR == 5 && NV_TENSORRT_MINOR == 0
++    #if NV_TENSORRT_MAJOR >= 5 && NV_TENSORRT_MINOR >= 0
+         const int parserLogLevel = (int)nvinfer1::ILogger::Severity::kINFO;
+     #else
+         const int parserLogLevel = (int)nvinfer1::ILogger::Severity::kVERBOSE;
+-- 
+2.17.1
+

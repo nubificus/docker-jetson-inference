@@ -1,0 +1,216 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8eadac0..837ab74 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -63,12 +63,13 @@ set(
+ )
+ 
+ if(CUDA_VERSION_MAJOR GREATER 9)
+-	message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_72")
++	message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_72, enable SM_75")
+ 
+ 	set(
+ 		CUDA_NVCC_FLAGS
+ 		${CUDA_NVCC_FLAGS}; 
+ 		-gencode arch=compute_72,code=sm_72
++		-gencode arch=compute_75,code=sm_75
+ 	)
+ 
+ 	# OpenCV used for findHomography() and decomposeHomography()
+@@ -107,7 +108,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR}/lib)
+ 
+ # build C/C++ library
+ include_directories(${PROJECT_INCLUDE_DIR} ${PROJECT_INCLUDE_DIR}/jetson-inference ${PROJECT_INCLUDE_DIR}/jetson-utils)
+-include_directories(/usr/include/gstreamer-1.0 /usr/lib/aarch64-linux-gnu/gstreamer-1.0/include /usr/include/glib-2.0 /usr/include/libxml2 /usr/lib/aarch64-linux-gnu/glib-2.0/include/)
++#include_directories(/usr/include/gstreamer-1.0 /usr/lib/aarch64-linux-gnu/gstreamer-1.0/include /usr/include/glib-2.0 /usr/include/libxml2 /usr/lib/aarch64-linux-gnu/glib-2.0/include/)
++include_directories(/usr/include/gstreamer-1.0 /usr/lib/x86_64-linux-gnu/gstreamer-1.0/include /usr/include/glib-2.0 /usr/include/libxml2 /usr/lib/x86_64-linux-gnu/glib-2.0/include/)
+ 
+ file(GLOB inferenceSources c/*.cpp c/*.cu calibration/*.cpp plugins/*.cpp)
+ file(GLOB inferenceIncludes c/*.h c/*.cuh calibration/*.h)
+diff --git a/c/tensorNet.h b/c/tensorNet.h
+index b893c04..edb63c4 100644
+--- a/c/tensorNet.h
++++ b/c/tensorNet.h
+@@ -36,6 +36,7 @@ namespace nvinfer1 { class IInt8Calibrator; }
+ #include <sstream>
+ #include <math.h>
+ 
++#define printf(...)
+ 
+ #if NV_TENSORRT_MAJOR > 1
+ typedef nvinfer1::DimsCHW Dims3;
+diff --git a/examples/detectnet-console/detectnet-console.cpp b/examples/detectnet-console/detectnet-console.cpp
+index 7fc7029..a87bddb 100644
+--- a/examples/detectnet-console/detectnet-console.cpp
++++ b/examples/detectnet-console/detectnet-console.cpp
+@@ -48,6 +48,12 @@ int usage()
+ 	return 0;
+ }
+ 
++static double udifftimeval1(struct timespec start, struct timespec end)
++{
++	return (double)(end.tv_nsec - start.tv_nsec) +
++		(double)(end.tv_sec - start.tv_sec) * 1000 * 1000 * 1000;
++}
++
+ int main( int argc, char** argv )
+ {
+ 	/*
+@@ -55,6 +61,10 @@ int main( int argc, char** argv )
+ 	 */
+ 	commandLine cmdLine(argc, argv);
+ 
++	struct timespec start1, end1;
++	int tt = 0, iterations = cmdLine.GetInt("iterations", 1);
++	double ttotal = 0, op_time[iterations-1];
++
+ 	if( cmdLine.GetFlag("help") )
+ 		return usage();
+ 	
+@@ -69,7 +79,9 @@ int main( int argc, char** argv )
+ 		printf("detectnet-console:   input image filename required\n\n");
+ 		return usage();
+ 	}
+-
++	
++	do {
++	clock_gettime(CLOCK_MONOTONIC, &start1);
+ 
+ 	/*
+ 	 * create detection network
+@@ -141,6 +153,17 @@ int main( int argc, char** argv )
+ 
+ 	CUDA(cudaFreeHost(imgCPU));
+ 	SAFE_DELETE(net);
++	CUDA(cudaDeviceReset());
++
++	clock_gettime(CLOCK_MONOTONIC, &end1);
++	op_time[tt] = udifftimeval1(start1, end1);
++	ttotal += op_time[tt];
++	} while(tt++ < iterations);
++
++	for (int i = 0; i < iterations; i++)
++		fprintf(stdout, "\top[%d]: %.6f ms\n", i, op_time[i] / 1000000.0);
++	fprintf(stdout, "\n\titerations: %d\n\top: %.6f ms\n", \
++			iterations, ttotal / (tt * 1000000.0));
+ 
+ 	printf("detectnet-console:  shutdown complete\n");
+ 	return 0;
+diff --git a/examples/imagenet-console/imagenet-console.cpp b/examples/imagenet-console/imagenet-console.cpp
+index c4f85e2..3230d08 100644
+--- a/examples/imagenet-console/imagenet-console.cpp
++++ b/examples/imagenet-console/imagenet-console.cpp
+@@ -42,6 +42,12 @@ int usage()
+ 	return 0;
+ }
+ 
++static double udifftimeval1(struct timespec start, struct timespec end)
++{
++	return (double)(end.tv_nsec - start.tv_nsec) +
++	       (double)(end.tv_sec - start.tv_sec) * 1000 * 1000 * 1000;
++}
++
+ int main( int argc, char** argv )
+ {
+ 	/*
+@@ -49,10 +55,14 @@ int main( int argc, char** argv )
+ 	 */
+ 	commandLine cmdLine(argc, argv);
+ 
++	struct timespec start1, end1;
++	int tt = 0, iterations = cmdLine.GetInt("iterations", 1);
++	double ttotal = 0, op_time[iterations-1];
++
++
+ 	if( cmdLine.GetFlag("help") )
+ 		return usage();
+ 
+-
+ 	/*
+ 	 * check input filename
+ 	 */
+@@ -63,7 +73,9 @@ int main( int argc, char** argv )
+ 		printf("imagenet-console:   input image filename required\n\n");
+ 		return usage();
+ 	}
+-	
++
++	do {
++	clock_gettime(CLOCK_MONOTONIC, &start1);	
+ 	
+ 	/*
+ 	 * create recognition network
+@@ -145,6 +157,17 @@ int main( int argc, char** argv )
+ 
+ 	CUDA(cudaFreeHost(imgCPU));
+ 	SAFE_DELETE(net);
++	CUDA(cudaDeviceReset());
++
++	clock_gettime(CLOCK_MONOTONIC, &end1);
++	op_time[tt] = udifftimeval1(start1, end1);
++	ttotal += op_time[tt];
++	} while(tt++ < iterations);
++
++	for (int i = 0; i < iterations; i++)
++		fprintf(stdout, "\top[%d]: %.6f ms\n", i, op_time[i] / 1000000.0);
++	fprintf(stdout, "\n\titerations: %d\n\top: %.6f ms\n", \
++			iterations, ttotal / (tt * 1000000.0));
+ 
+ 	printf("imagenet-console:  shutdown complete\n");
+ 	return 0;
+diff --git a/examples/segnet-console/segnet-console.cpp b/examples/segnet-console/segnet-console.cpp
+index bf68425..5c27d34 100644
+--- a/examples/segnet-console/segnet-console.cpp
++++ b/examples/segnet-console/segnet-console.cpp
+@@ -51,6 +51,12 @@ int usage()
+ 	return 0;
+ }
+ 
++static double udifftimeval1(struct timespec start, struct timespec end)
++{
++	return (double)(end.tv_nsec - start.tv_nsec) +
++		(double)(end.tv_sec - start.tv_sec) * 1000 * 1000 * 1000;
++}
++
+ int main( int argc, char** argv )
+ {
+ 	/*
+@@ -58,6 +64,10 @@ int main( int argc, char** argv )
+ 	 */
+ 	commandLine cmdLine(argc, argv);
+ 
++	struct timespec start1, end1;
++	int tt = 0, iterations = cmdLine.GetInt("iterations", 1);
++	double ttotal = 0, op_time[iterations-1];
++
+ 	if( cmdLine.GetFlag("help") )
+ 		return usage();
+ 
+@@ -74,6 +84,8 @@ int main( int argc, char** argv )
+ 		return usage();
+ 	}
+ 
++	do {
++	clock_gettime(CLOCK_MONOTONIC, &start1);
+ 
+ 	/*
+ 	 * create segmentation network
+@@ -177,8 +189,17 @@ int main( int argc, char** argv )
+ 
+ 	CUDA(cudaFreeHost(imgCPU));
+ 	CUDA(cudaFreeHost(outCPU));
++	CUDA(cudaDeviceReset());
++
++	clock_gettime(CLOCK_MONOTONIC, &end1);
++	op_time[tt] = udifftimeval1(start1, end1);
++	ttotal += op_time[tt];
++	} while(tt++ < iterations);
+ 
+-	SAFE_DELETE(net);
++	for (int i = 0; i < iterations; i++)
++		fprintf(stdout, "\top[%d]: %.6f ms\n", i, op_time[i] / 1000000.0);
++	fprintf(stdout, "\n\titerations: %d\n\top: %.6f ms\n", \
++			iterations, ttotal / (tt * 1000000.0));
+ 
+ 	printf("segnet-console:  shutdown complete\n");
+ 	return 0;

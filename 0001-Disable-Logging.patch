@@ -1,0 +1,25 @@
+From 624bb2206caadf1f61b181ebcb08c419c143d823 Mon Sep 17 00:00:00 2001
+From: root <root@bm.nubificus.com>
+Date: Thu, 3 Dec 2020 13:23:02 -0600
+Subject: [PATCH] Disable Logging
+
+---
+ logging.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/logging.h b/logging.h
+index 218e3ac..6319127 100644
+--- a/logging.h
++++ b/logging.h
+@@ -171,7 +171,7 @@ protected:
+  * Log a printf-style verbose message (Log::VERBOSE)
+  * @ingroup log
+  */
+-#define LogVerbose(format, args...)	LogMessage(Log::VERBOSE, LOG_LEVEL_PREFIX_VERBOSE format, ## args)
++#define LogVerbose(format, args...)	
+ 
+ /**
+  * Log a printf-style debug message (Log::DEBUG)
+-- 
+2.17.1
+
