@@ -13,7 +13,7 @@ index 8eadac0..837ab74 100644
  		CUDA_NVCC_FLAGS
  		${CUDA_NVCC_FLAGS}; 
  		-gencode arch=compute_72,code=sm_72
-+		-gencode arch=compute_75,code=sm_75
++		-gencode arch=compute_60,code=sm_60
  	)
  
  	# OpenCV used for findHomography() and decomposeHomography()
