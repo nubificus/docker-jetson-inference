@@ -8,24 +8,28 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, "${{ matrix.arch }}" ]
     strategy:
       matrix: 
-        arch: [x86_64, arm64]
+        arch: [x64, aarch64]
 
     steps:
     - uses: actions/checkout@main
 
-    - name: Set Dockerfile Name
+    - name: Set Dockerfile name & Tags
       id: set-dockerfile-name
       run: |
-        if [[ "${{ matrix.arch }}" == "x86_64" ]]
+        if [[ "${{ matrix.arch }}" == "x64" ]]
         then
           Dockerfile="Dockerfile"
+          tag="x86_64"
           echo "::set-output name=dfile::$Dockerfile"
+          echo "::set-output name=atag::$tag"
         else
           Dockerfile="Dockerfile.arm64"
+          tag="arm64"
           echo "::set-output name=dfile::$Dockerfile"
+          echo "::set-output name=atag::$tag"
         fi
 
     - name: Publish to Registry
@@ -34,5 +38,5 @@ jobs:
         name:  nubificus/jetson-inference
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        tags: "latest, ${{ matrix.arch }}"
+        tags: "latest, ${{ steps.set-dockerfile-name.outputs.atag }}"
         dockerfile: ${{ steps.set-dockerfile-name.outputs.dfile }}
