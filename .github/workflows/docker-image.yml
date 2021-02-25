@@ -11,7 +11,7 @@ jobs:
     runs-on: ["${{ matrix.arch }}" ]
     strategy:
       matrix: 
-        arch: [X64, aarch64]
+        arch: [ubuntu-latest, aarch64]
       fail-fast: false
 
     steps:
@@ -20,7 +20,7 @@ jobs:
     - name: Set Dockerfile name & Tags
       id: set-dockerfile-name
       run: |
-        if [[ "${{ matrix.arch }}" == "x64" ]]
+        if [[ "${{ matrix.arch }}" == "ubuntu-latest" ]]
         then
           Dockerfile="Dockerfile"
           tag="x86_64"
