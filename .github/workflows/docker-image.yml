@@ -8,10 +8,10 @@ on:
 
 jobs:
   build:
-    runs-on: ["${{ matrix.arch }}" ]
+    runs-on: [self-hosted, "${{ matrix.arch }}" ]
     strategy:
       matrix: 
-        arch: [ubuntu-latest, aarch64]
+        arch: [X64, aarch64]
       fail-fast: false
 
     steps:
@@ -20,7 +20,7 @@ jobs:
     - name: Set Dockerfile name & Tags
       id: set-dockerfile-name
       run: |
-        if [[ "${{ matrix.arch }}" == "ubuntu-latest" ]]
+        if [[ "${{ matrix.arch }}" == "X64" ]]
         then
           Dockerfile="Dockerfile"
           tag="x86_64"
@@ -39,5 +39,5 @@ jobs:
         name:  nubificus/jetson-inference
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        tags: "latest, ${{ steps.set-dockerfile-name.outputs.atag }}"
+        tags: "${{ steps.set-dockerfile-name.outputs.atag }}"
         dockerfile: ${{ steps.set-dockerfile-name.outputs.dfile }}
