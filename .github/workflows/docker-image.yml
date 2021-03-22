@@ -39,6 +39,7 @@ jobs:
 
       - name: Create manifest
         run: |
+          docker manifest rm nubificus/jetson-inference
           docker manifest create nubificus/jetson-inference:latest \
             --amend nubificus/jetson-inference:x86_64 \
             --amend nubificus/jetson-inference:aarch64
