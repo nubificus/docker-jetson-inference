@@ -2,36 +2,21 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ main, aarch64 ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 jobs:
   build:
     runs-on: [self-hosted, "${{ matrix.arch }}" ]
+
     strategy:
       matrix: 
-        arch: [X64, aarch64]
+        arch: [x86_64, aarch64]
       fail-fast: false
 
     steps:
     - uses: actions/checkout@main
-
-    - name: Set Dockerfile name & Tags
-      id: set-dockerfile-name
-      run: |
-        if [[ "${{ matrix.arch }}" == "X64" ]]
-        then
-          Dockerfile="Dockerfile"
-          tag="x86_64"
-          echo "::set-output name=dfile::$Dockerfile"
-          echo "::set-output name=atag::$tag"
-        else
-          Dockerfile="Dockerfile.arm64"
-          tag="arm64"
-          echo "::set-output name=dfile::$Dockerfile"
-          echo "::set-output name=atag::$tag"
-        fi
 
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
@@ -39,5 +24,17 @@ jobs:
         name:  nubificus/jetson-inference
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        tags: "${{ steps.set-dockerfile-name.outputs.atag }}"
-        dockerfile: ${{ steps.set-dockerfile-name.outputs.dfile }}
+        tags: ${{ matrix.arch }}
+        dockerfile: Dockerfile.${{ matrix.arch }}
+
+  create_manifest:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Create manifest
+        run: |
+          docker manifest create nubificus/jetson-inference:latest \
+            --amend nubificus/jetson-inference:x86_64 \
+            --amend nubificus/jetson-inference:aarch64
+          docker manifest push nubificus/jetson-inference:latest
