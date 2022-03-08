@@ -1,0 +1,28 @@
+From ef6cc24deb88e7cf5b6f6f19cf6822dd900ae256 Mon Sep 17 00:00:00 2001
+From: Kostis Papazafeiropoulos <papazof@gmail.com>
+Date: Tue, 8 Mar 2022 19:30:41 +0000
+Subject: [PATCH] Fix tensorNet destructor
+
+---
+ c/tensorNet.cpp | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/c/tensorNet.cpp b/c/tensorNet.cpp
+index 8c47a09b..89d166a5 100644
+--- a/c/tensorNet.cpp
++++ b/c/tensorNet.cpp
+@@ -326,6 +326,12 @@ tensorNet::tensorNet()
+ // Destructor
+ tensorNet::~tensorNet()
+ {
++	if( mContext != NULL )
++	{
++		mContext->destroy();
++		mContext = NULL;
++	}
++		
+ 	if( mEngine != NULL )
+ 	{
+ 		mEngine->destroy();
+-- 
+2.17.1

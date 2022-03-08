@@ -14,6 +14,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN cd /jetson-inference && \
 	git clone https://github.com/dusty-nv/jetson-inference --depth 1
 
+# fix memory leak causing crashes in vaccelrt-plugin-jetson
+COPY /0001-Fix-tensorNet-destructor.patch /
+RUN cd /jetson-inference && patch -p1 < /0001-Fix-tensorNet-destructor.patch && \
+	cd build && cmake .. && \
+	make -j$(nproc) && make install && ldconfig
+
 RUN cd /jetson-inference && \
 	cp -a utils/image/stb /usr/local/include && \
 	mkdir /usr/local/share/jetson-inference/tools && \
