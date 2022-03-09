@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY /0001-Fix-tensorNet-destructor.patch /
 
 COPY /0001-Enable-RTX-gpu.patch /
-RUN git clone --recursive https://github.com/dusty-nv/jetson-inference
+RUN git clone --recursive https://github.com/dusty-nv/jetson-inference -b nvmm-disabled
 RUN cd /jetson-inference && \
 	git config user.name "Builder" && \
 	git config user.email "builder@nubificus.co.uk" && \
