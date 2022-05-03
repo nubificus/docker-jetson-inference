@@ -19,7 +19,7 @@ jobs:
     - uses: actions/checkout@main
 
     - name: Publish to Registry
-      uses: elgohr/Publish-Docker-Github-Action@master
+      uses: elgohr/Publish-Docker-Github-Action@3.04
       with:
         name:  nubificus/jetson-inference
         username: ${{ secrets.DOCKER_USERNAME }}
